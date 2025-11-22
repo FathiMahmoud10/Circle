@@ -76,26 +76,74 @@
         let isDrawing = false;
         let points = []; // تخزين النقاط المرسومة
 
-        // بدء الرسم عند الضغط على الماوس
+        // دالة للحصول على إحداثيات اللمس أو الماوس
+        function getCoordinates(e) {
+            if (e.touches) {
+                // جهاز لمسي (مثل الهاتف)
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            } else {
+                // جهاز مكتبي (ماوس)
+                return {
+                    x: e.offsetX,
+                    y: e.offsetY
+                };
+            }
+        }
+
+        // بدء الرسم عند الضغط على الماوس أو اللمس
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
             points = []; // مسح النقاط السابقة
+            const { x, y } = getCoordinates(e);
             ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
-            points.push({ x: e.offsetX, y: e.offsetY });
+            ctx.moveTo(x, y);
+            points.push({ x, y });
         });
 
-        // الرسم أثناء الحركة
+        // بدء الرسم عند اللمس
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            points = []; // مسح النقاط السابقة
+            const { x, y } = getCoordinates(e);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            points.push({ x, y });
+            e.preventDefault(); // منع التمرير أثناء اللمس
+        });
+
+        // الرسم أثناء الحركة للماوس أو اللمس
         canvas.addEventListener('mousemove', (e) => {
             if (isDrawing) {
-                ctx.lineTo(e.offsetX, e.offsetY);
+                const { x, y } = getCoordinates(e);
+                ctx.lineTo(x, y);
                 ctx.stroke();
-                points.push({ x: e.offsetX, y: e.offsetY });
+                points.push({ x, y });
             }
         });
 
-        // إنهاء الرسم وحساب النسبة عند رفع الماوس
+        // الرسم أثناء الحركة عند اللمس
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDrawing) {
+                const { x, y } = getCoordinates(e);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                points.push({ x, y });
+                e.preventDefault(); // منع التمرير أثناء اللمس
+            }
+        });
+
+        // إنهاء الرسم وحساب النسبة عند رفع الماوس أو اللمس
         canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            calculateSimilarity(); // استدعاء دالة الحساب
+        });
+
+        // إنهاء الرسم عند رفع الأصبع
+        canvas.addEventListener('touchend', () => {
             isDrawing = false;
             calculateSimilarity(); // استدعاء دالة الحساب
         });
