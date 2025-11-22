@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رسم دائرة وحساب التشابه</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000; /* خلفية سوداء */
+            color: #fff; /* نص أبيض */
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        canvas {
+            border: 3px solid #fff; /* حدود بيضاء */
+            border-radius: 10px; /* زوايا دائرية */
+            background-color: #fff; /* خلفية بيضاء للوحة */
+            cursor: crosshair;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2); /* ظل خفيف */
+        }
+        button {
+            margin: 15px 10px;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #clearBtn {
+            background-color: #ff4757; /* أحمر للمسح */
+            color: #fff;
+        }
+        #clearBtn:hover {
+            background-color: #ff3742;
+            transform: scale(1.05);
+        }
+        p {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #ddd; /* رمادي فاتح */
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ارسم دائرة حرة وحسب التشابه</h1>
+        <canvas id="drawingCanvas" width="500" height="500"></canvas>
+        <br>
+        <button id="clearBtn">مسح اللوحة</button>
+        <p id="result">ابدأ الرسم للحصول على النسبة المئوية</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clearBtn');
+        const result = document.getElementById('result');
+
+        let isDrawing = false;
+        let points = []; // تخزين النقاط المرسومة
+
+        // بدء الرسم عند الضغط على الماوس
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            points = []; // مسح النقاط السابقة
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+            points.push({ x: e.offsetX, y: e.offsetY });
+        });
+
+        // الرسم أثناء الحركة
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+                points.push({ x: e.offsetX, y: e.offsetY });
+            }
+        });
+
+        // إنهاء الرسم وحساب النسبة عند رفع الماوس
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            calculateSimilarity(); // استدعاء دالة الحساب
+        });
+
+        // زر مسح اللوحة
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            points = [];
+            result.textContent = 'ابدأ الرسم للحصول على النسبة المئوية';
+        });
+
+        // دالة حساب التشابه
+        function calculateSimilarity() {
+            if (points.length < 3) {
+                result.textContent = 'ارسم رسمًا أكبر للحساب!';
+                return;
+            }
+
+            // حساب المركز (متوسط x و y)
+            let sumX = 0, sumY = 0;
+            points.forEach(p => { sumX += p.x; sumY += p.y; });
+            const centerX = sumX / points.length;
+            const centerY = sumY / points.length;
+
+            // حساب المسافات من المركز
+            const distances = points.map(p => Math.sqrt((p.x - centerX)**2 + (p.y - centerY)**2));
+            const avgRadius = distances.reduce((a, b) => a + b, 0) / distances.length;
+
+            // حساب الانحراف المعياري
+            const variance = distances.reduce((sum, d) => sum + (d - avgRadius)**2, 0) / distances.length;
+            const stdDev = Math.sqrt(variance);
+
+            // حساب النسبة المئوية
+            const similarity = Math.max(0, Math.min(100, 100 - (stdDev / avgRadius) * 100));
+            result.textContent = `نسبة التشابه: ${similarity.toFixed(2)}%`;
+        }
+    </script>
+</body>
+</html>
